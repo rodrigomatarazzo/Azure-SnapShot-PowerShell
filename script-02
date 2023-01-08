@@ -1,1 +1,24 @@
-z
+Connect-AzAccount -Identity
+Set-AzContext -Subscription 'Azure for Students'
+$vms = Get-AzVM 
+foreach($vm in $vms) {
+    $vmName = $vm.name
+    $resourceGroupName = $vm.resourceGroupName 
+    $location = $vm.location
+    $ResourceType = 'snp'
+    $Wworkload = 'Workload'
+    $Enviroment = 'Produto'
+    $AzureRegion = 'Regiao'
+    $Instancia = '00'
+    $DataHora = $((Get-Date).ToString('dd-mm-yyyy.h-m-s'))
+    $snapConfig = New-AzSnapshotConfig `
+    -SourceUri $vm.StorageProfile.OsDisk.ManagedDisk.Id `
+    -Location $location `
+    -CreateOption copy
+    New-AzSnapshot `
+        -Snapshot $snapConfig `
+        -SnapshotName $ResourceType-$Wworkload-$Enviroment-$AzureRegion-$Instancia-$vmName-$DataHora `
+        -ResourceGroupName $resourceGroupName
+    Get-AzSnapshot `
+        -ResourceGroupName $resourceGroupName
+}
