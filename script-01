@@ -1,0 +1,40 @@
+#Conexão Acesso
+Connect-AzAccount -Identity
+Set-AzContext -Subscription 'Azure for Students'
+## Customização
+#Definição do Resource Group desejado
+$resourceGroupName = 'rg-lab-geral-02' 
+#Definição da Região
+$location = 'Brazil South'
+#Tipo do tipo de Sistema Operacional
+$SO = 'Windows'
+#Obtenção dos recursos desejados utilizando o filtro por Resource Group e Sistema Operacional
+$vms = Get-AzVM -ResourceGroupName $resourceGroupName | 
+  Where-Object {$_.StorageProfile.OsDisk.OsType -eq $SO }
+# O foreach é uma instrução (também conhecida como loop foreach ) utilizada para percorrer 
+# uma série de valores em uma coleção de itens. Aqui no caso selecionadas na variavel $vms
+foreach($vm in $vms) {
+    #Obtenção do nome da VM
+    $vmName = $vm.name
+    # Nomenclatura do SnapShot
+    ## Seguindo o "Define your naming convention, sugerido pela MicroSoft"
+    ## https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming
+    $ResourceType = 'snp'
+    $Wworkload = 'Workload'
+    $Enviroment = 'Produto'
+    $AzureRegion = 'BrazilSouth'
+    $Instancia = '00'
+    $DataHora = $((Get-Date).ToString('dd-mm-yyyy.h-m-s'))
+    #Configuração do New-AzSnapshotConfig
+    $snapConfig = New-AzSnapshotConfig `
+    -SourceUri $vm.StorageProfile.OsDisk.ManagedDisk.Id `
+    -Location $location `
+    -CreateOption copy
+    #Configuração do New-AzSnapshot
+    New-AzSnapshot `
+        -Snapshot $snapConfig `
+        -SnapshotName $ResourceType-$Wworkload-$Enviroment-$AzureRegion-$Instancia-$DataHora-$vmName `
+        -ResourceGroupName $resourceGroupName
+    Get-AzSnapshot `
+        -ResourceGroupName $resourceGroupName
+}
